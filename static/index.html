@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Internship Scout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Internship Scout</h1>
+      <p class="lede">
+        Your merged pull requests are the best CV you have. Scout reads them, finds internships that match
+        what you've actually shipped, checks which companies are young and publish an email, and drafts a
+        first message for you to send yourself.
+      </p>
+    </header>
+
+    <form id="form">
+      <label>GitHub username
+        <input name="github" required placeholder="octocat" autocomplete="off" />
+      </label>
+      <label>What you're looking for
+        <input name="query" value="software engineer intern remote" />
+      </label>
+      <div class="row">
+        <label>Location
+          <input name="location" value="India" />
+        </label>
+        <label>Companies to check
+          <select name="max_companies">
+            <option>3</option><option selected>6</option><option>10</option>
+          </select>
+        </label>
+      </div>
+      <label class="check"><input type="checkbox" name="with_news" /> Include recent news (one extra search per company)</label>
+      <button type="submit">Find internships</button>
+      <p id="budget" class="muted small"></p>
+    </form>
+
+    <p id="status" class="muted" aria-live="polite"></p>
+    <section id="profile"></section>
+    <section id="results"></section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
