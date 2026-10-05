@@ -36,25 +36,42 @@ def _domain(url: str) -> str:
     return host.removeprefix("www.")
 
 
-def _founded_from(data: dict) -> tuple[int | None, str]:
+SUFFIXES = re.compile(r"\b(inc|llc|ltd|limited|pvt|private|gmbh|corp|corporation|co|company|technologies|technology|"
+                      r"tech|labs|industries|software|solutions|systems|group|hq|ai|io)\b\.?", re.I)
+
+
+def _slug(text: str) -> str:
+    base = SUFFIXES.sub("", text) or text
+    return re.sub(r"[^a-z0-9]", "", base.lower())
+
+
+def _same_company(name: str, text: str) -> bool:
+    """Guards against Google answering for a different organisation with a similar name."""
+    a, b = _slug(name), _slug(text)
+    return bool(a) and (a in b or (len(b) >= 4 and b in a))
+
+
+def _founded_from(data: dict, name: str) -> tuple[int | None, str]:
     kg = data.get("knowledge_graph") or {}
-    for key, value in kg.items():
-        if "found" in key.lower():
-            m = re.search(r"(?:19|20)\d{2}", str(value))
-            if m:
-                return int(m.group()), "Google knowledge panel"
+    if _same_company(name, kg.get("title", "")):
+        for key, value in kg.items():
+            if "found" in key.lower():
+                m = re.search(r"(?:19|20)\d{2}", str(value))
+                if m:
+                    return int(m.group()), "Google knowledge panel"
     for res in data.get("organic_results", [])[:6]:
-        m = YEAR_RE.search(f"{res.get('title', '')} {res.get('snippet', '')}")
-        if m:
+        text = f"{res.get('title', '')} {res.get('snippet', '')}"
+        m = YEAR_RE.search(text)
+        if m and _same_company(name, text) and _slug(name) in _slug(text[: m.start()] + text[m.end():]):
             return int(m.group(1)), res.get("link", "")
     return None, ""
 
 
 def _website_from(data: dict, name: str) -> str:
     kg = data.get("knowledge_graph") or {}
-    if kg.get("website"):
+    if kg.get("website") and _same_company(name, kg.get("title", "")):
         return kg["website"]
-    slug = re.sub(r"[^a-z0-9]", "", name.lower())
+    slug = _slug(name)
     noise = ("linkedin.", "wikipedia.", "crunchbase.", "glassdoor.", "indeed.", "naukri.", "ambitionbox.",
              "twitter.", "x.com", "facebook.", "instagram.", "youtube.", "github.com", "tracxn.", "zoominfo.")
     for res in data.get("organic_results", [])[:6]:
@@ -100,8 +117,8 @@ def find_email(website: str) -> tuple[str, str]:
 
 
 def enrich(name: str, with_news: bool = False) -> Company:
-    data = serp.google(f"{name} company founded")
-    founded, source = _founded_from(data)
+    data = serp.google(f'"{name}" company')
+    founded, source = _founded_from(data, name)
     website = _website_from(data, name)
     kg = data.get("knowledge_graph") or {}
     company = Company(
@@ -109,7 +126,7 @@ def enrich(name: str, with_news: bool = False) -> Company:
         website=website,
         founded=founded,
         founded_source=source,
-        description=kg.get("description", "") or (data.get("organic_results") or [{}])[0].get("snippet", ""),
+        description=kg.get("description", "") if _same_company(name, kg.get("title", "")) else "",
     )
     if website:
         company.email, company.email_source = find_email(website)

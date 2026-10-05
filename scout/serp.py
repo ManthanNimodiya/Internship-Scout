@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import re
 
 import httpx
 
@@ -44,11 +45,19 @@ def search(engine: str, ttl_hours: float, **params) -> dict:
 
 
 def jobs(query: str, location: str, pages: int = 1) -> list[dict]:
-    """Google Jobs listings. One search per page of about 10 jobs."""
+    """Google Jobs listings. One search per page of about 10 jobs.
+
+    "remote" in the query becomes Google Jobs' own work-from-home filter, which returns far fewer
+    reposting boards than the word itself does.
+    """
+    remote = bool(re.search(r"\bremote\b", query, re.I))
+    q = re.sub(r"\s+", " ", re.sub(r"\bremote\b", "", query, flags=re.I)).strip() or query
     results: list[dict] = []
     token = None
     for _ in range(pages):
-        params = {"q": query, "location": location, "hl": "en"}
+        params = {"q": q, "location": location, "hl": "en"}
+        if remote:
+            params["ltype"] = "1"
         if token:
             params["next_page_token"] = token
         data = search("google_jobs", ttl_hours=24, **params)

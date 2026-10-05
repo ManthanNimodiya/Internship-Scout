@@ -11,6 +11,16 @@ from .github import Profile
 
 JUNIOR = re.compile(r"\b(intern(ship)?|trainee|junior|entry[- ]level|new grad|graduate|fresher|student)\b", re.I)
 SENIOR = re.compile(r"\b(senior|sr\.?|staff|principal|lead|head of|director|manager|architect)\b|\b([5-9]|1\d)\+? years", re.I)
+US_ONLY = re.compile(r"\b(remote[ ,-]*us|us[- ]only|usa only|us[- ]based|united states only|must be (located|based) in the us)\b", re.I)
+BOARD_WORDS = re.compile(r"\b(jobs?|hire|hiring|careers?|recruit\w*|staffing|talent|remote|vacanc\w*|openings)\b", re.I)
+
+
+def is_job_board(company: str, via: str) -> bool:
+    """Listings reposted by job boards name the board as the company, so you can't write to the employer."""
+    c, v = re.sub(r"[^a-z0-9]", "", company.lower()), re.sub(r"[^a-z0-9]", "", (via or "").lower().removeprefix("via "))
+    return bool(BOARD_WORDS.search(company)) or (bool(c) and c == v)
+
+
 REMOTE = re.compile(r"\b(remote|work from home|wfh|anywhere)\b", re.I)
 
 # GitHub language names mapped to words that show up in job descriptions.
@@ -53,6 +63,10 @@ def score(job: dict, company: Company | None, profile: Profile) -> tuple[float, 
     elif SENIOR.search(title):
         points -= 3
         reasons.append("Listed as a senior role, so ask about an internship instead")
+
+    if US_ONLY.search(f"{title} {job.get('description', '')[:400]}"):
+        points -= 3
+        reasons.append("Looks limited to people in the US")
 
     ext = job.get("detected_extensions") or {}
     if ext.get("work_from_home") or REMOTE.search(f"{title} {job.get('location', '')}"):

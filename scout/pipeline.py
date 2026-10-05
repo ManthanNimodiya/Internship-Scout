@@ -7,7 +7,7 @@ from .companies import enrich
 from .config import settings
 from .drafts import draft, mailto
 from .github import profile as build_profile
-from .rank import score
+from .rank import is_job_board, score
 
 
 def run(github_user: str, query: str, location: str = "India", max_companies: int = 6, pages: int = 1,
@@ -20,11 +20,12 @@ def run(github_user: str, query: str, location: str = "India", max_companies: in
     best: dict[str, tuple[float, dict]] = {}
     for job in listings:
         name = (job.get("company_name") or "").strip()
-        if not name:
+        if not name or is_job_board(name, job.get("via", "")):
             continue
         s, _, _ = score(job, None, prof)
         if name not in best or s > best[name][0]:
             best[name] = (s, job)
+    boards = len(listings) - sum(1 for j in listings if (j.get("company_name") or "").strip() in best)
     shortlist = sorted(best.items(), key=lambda kv: -kv[1][0])[:max_companies]
 
     results = []
@@ -58,6 +59,7 @@ def run(github_user: str, query: str, location: str = "India", max_companies: in
         },
         "query": {"q": query, "location": location},
         "listings_seen": len(listings),
+        "boards_skipped": boards,
         "results": results,
         "searches": {"this_run": cache.searches_this_month() - before, "this_month": cache.searches_this_month(),
                      "budget": settings.monthly_budget},
