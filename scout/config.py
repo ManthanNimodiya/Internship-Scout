@@ -15,7 +15,7 @@ class Settings:
     # The free SerpApi plan allows 250 searches a month; stop a little before that.
     monthly_budget: int = int(os.getenv("SCOUT_MONTHLY_BUDGET", "240"))
     cache_path: Path = Path(os.getenv("SCOUT_CACHE", str(ROOT / "scout-cache.sqlite3")))
-    user_agent: str = "internship-scout/0.1 (+https://github.com/ManthanNimodiya/internship-scout)"
+    user_agent: str = "internship-scout/0.1 (+https://github.com/ManthanNimodiya/Internship-Scout)"
 
 
 settings = Settings()

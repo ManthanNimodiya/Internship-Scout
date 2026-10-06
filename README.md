@@ -86,8 +86,8 @@ A typical run (1 job search, 6 companies) costs 7 searches; with news, 13.
 Python 3.10 or newer.
 
 ```bash
-git clone https://github.com/ManthanNimodiya/internship-scout
-cd internship-scout
+git clone https://github.com/ManthanNimodiya/Internship-Scout
+cd Internship-Scout
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # then add your SerpApi key (and optionally a GitHub token)
