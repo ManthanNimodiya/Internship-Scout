@@ -9,7 +9,7 @@ Built for the **SerpApi India Hackathon 2026**, *Knowledge & Public Interest* tr
 ## Why I built it
 
 I'm a second-year student in Bengaluru with about 80 pull requests merged into open-source projects. In one week I
-emailed 50 companies about internships by hand, and most of that time went on the same four chores:
+emailed nearly 50 companies about internships by hand, and most of that time went on the same four chores:
 
 1. finding listings that were actually open to a student in India, not reposts on job boards;
 2. checking whether a company was a young startup or a large firm;

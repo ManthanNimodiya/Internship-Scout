@@ -14,7 +14,7 @@ python cli.py ManthanNimodiya --query "software engineer intern remote" --locati
 
 **0:00 to 0:20. The problem**
 
-"I'm a second-year student in Bengaluru. Last week I emailed 50 companies about internships by hand. Most of the time
+"I'm a second-year student in Bengaluru. Last week I emailed nearly 50 companies about internships by hand. Most of the time
 didn't go on writing. It went on finding listings that weren't job-board reposts, checking whether a company was a
 startup, finding an email they'd actually published, and working out which of my pull requests mattered for each role."
 
