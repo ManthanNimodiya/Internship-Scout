@@ -84,6 +84,13 @@ def score(job: dict, company: Company | None, profile: Profile) -> tuple[float, 
         elif age > 10:
             points -= 1
             reasons.append(f"Established company, founded {company.founded}")
+    funding = re.compile(r"\b(raises?|raised|funding|seed|series [a-d]|backed by)\b", re.I)
+    for item in (company.news if company else []):
+        if funding.search(item.get("title") or ""):
+            points += 1
+            reasons.append(f"Recently in the news for funding: \u201c{item['title']}\u201d")
+            break
+
     if company and company.email:
         points += 1
         reasons.append("Publishes an email you can write to")

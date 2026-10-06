@@ -38,7 +38,8 @@ class Profile:
     languages: list[str]  # ranked by how many merged PRs touch a repo in that language
 
 
-def _get(path: str, **params):
+def get(path: str, **params):
+    """Cached GitHub REST call. Also used by the company checks to find a company's GitHub organisation."""
     key = f"github:{path}:{sorted(params.items())}"
     hit = cache.get(key, ttl_hours=6)
     if hit is not None:
@@ -54,8 +55,8 @@ def _get(path: str, **params):
 
 
 def profile(username: str, top_repos: int = 8) -> Profile:
-    user = _get(f"/users/{username}")
-    items = _get("/search/issues", q=f"author:{username} is:pr is:merged", per_page=100, sort="updated")["items"]
+    user = get(f"/users/{username}")
+    items = get("/search/issues", q=f"author:{username} is:pr is:merged", per_page=100, sort="updated")["items"]
 
     by_repo: dict[str, list[PullRequest]] = {}
     for it in items:
@@ -70,7 +71,7 @@ def profile(username: str, top_repos: int = 8) -> Profile:
     for i, (repo, prs) in enumerate(ranked):
         langs: list[str] = []
         if i < top_repos:  # keep GitHub API calls bounded
-            langs = [l for l in _get(f"/repos/{repo}/languages") if l not in NOT_LANGUAGES][:4]
+            langs = [l for l in get(f"/repos/{repo}/languages") if l not in NOT_LANGUAGES][:4]
             for lang in langs:
                 weight[lang] += len(prs)
         repos.append(RepoWork(repo, len(prs), langs, prs))

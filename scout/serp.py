@@ -36,7 +36,9 @@ def search(engine: str, ttl_hours: float, **params) -> dict:
     response = httpx.get(SERP_URL, params={"engine": engine, "api_key": settings.serpapi_key, **params}, timeout=40)
     cache.record_search(engine)
     data = response.json()
-    if response.status_code != 200 or "error" in data:
+    if "hasn't returned any results" in str(data.get("error", "")):
+        data = {}  # an empty search is a normal answer, not a failure; cache it so we don't pay for it twice
+    elif response.status_code != 200 or "error" in data:
         raise SerpError(data.get("error", f"SerpApi returned HTTP {response.status_code}"))
 
     data.pop("search_metadata", None)  # contains request ids; not worth keeping

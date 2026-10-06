@@ -27,6 +27,12 @@
       <label>What you're looking for
         <input name="query" value="software engineer intern remote" />
       </label>
+      <p class="chips small">Try:
+        <button type="button" class="chip" data-query="software engineer intern remote" data-location="India">Remote SWE intern</button>
+        <button type="button" class="chip" data-query="software engineer intern" data-location="Bengaluru, Karnataka, India">Bengaluru SWE intern</button>
+        <button type="button" class="chip" data-query="backend developer intern remote" data-location="India">Backend intern</button>
+        <button type="button" class="chip" data-query="frontend developer intern remote" data-location="India">Frontend intern</button>
+      </p>
       <div class="row">
         <label>Location
           <input name="location" value="India" />
@@ -45,6 +51,11 @@
     <p id="status" class="muted" aria-live="polite"></p>
     <section id="profile"></section>
     <section id="results"></section>
+    <footer class="small muted">
+      Built for the SerpApi India Hackathon 2026. Job listings come from Google Jobs and company checks from Google Search
+      and Google News, via SerpApi. Emails are only ever taken from a company's own website or GitHub organisation, and
+      nothing is sent for you.
+    </footer>
   </main>
   <script src="/static/app.js"></script>
 </body>

@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 import httpx
 
-from . import cache, serp
+from . import cache, github, serp
 from .config import settings
 
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
@@ -14,7 +14,7 @@ YEAR_RE = re.compile(r"\b(?:founded|established|started)(?: in)?[^0-9]{0,20}((?:
 
 HIRING = ("jobs", "careers", "career", "hiring", "talent", "recruit", "join", "work")
 GENERAL = ("hello", "hi", "hey", "team", "contact", "info", "founders")
-SKIP = ("support", "help", "sales", "privacy", "security", "billing", "press", "media", "legal", "abuse",
+SKIP = ("support", "help", "care", "customer", "sales", "privacy", "security", "billing", "press", "media", "legal", "abuse",
         "noreply", "no-reply", "marketing", "dpo", "gdpr", "partners", "invoice", "accounts")
 PAGES = ("", "careers", "jobs", "contact", "about", "company")
 
@@ -105,15 +105,41 @@ def find_email(website: str) -> tuple[str, str]:
     for page in PAGES:
         url = f"https://{domain}/{page}"
         for email in set(EMAIL_RE.findall(_fetch(url))):
-            local, _, host = email.lower().partition("@")
-            if not (host == domain or host.endswith("." + domain)) or local.startswith(SKIP):
+            if not _usable(email, domain):
                 continue
+            local = email.lower().partition("@")[0]
             rank = 3 if local.startswith(HIRING) else 2 if local.startswith(GENERAL) else 1
             if rank > best[0]:
                 best = (rank, email.lower(), url)
         if best[0] == 3:
             break
     return best[1], best[2]
+
+
+def github_org(name: str, website: str) -> dict:
+    """The company's GitHub organisation, if it has one. Orgs often list a contact address and their site.
+
+    An org only counts as a match when its website is the company's website, or, if we have no website,
+    when its display name is clearly the same company.
+    """
+    try:
+        hits = github.get("/search/users", q=f"{name} type:org", per_page=3).get("items", [])
+        for hit in hits:
+            org = github.get(f"/orgs/{hit['login']}")
+            blog = _domain(org.get("blog") or "")
+            if website and blog:
+                if blog == _domain(website):
+                    return org
+            elif not website and _same_company(name, org.get("name") or org["login"]):
+                return org
+    except httpx.HTTPError:
+        pass  # GitHub's search rate limit is tight without a token; the org check is a bonus, not a requirement
+    return {}
+
+
+def _usable(email: str, domain: str) -> bool:
+    local, _, host = email.lower().partition("@")
+    return bool(domain) and (host == domain or host.endswith("." + domain)) and not local.startswith(SKIP)
 
 
 def enrich(name: str, with_news: bool = False) -> Company:
@@ -130,6 +156,16 @@ def enrich(name: str, with_news: bool = False) -> Company:
     )
     if website:
         company.email, company.email_source = find_email(website)
+
+    if not company.email:
+        org = github_org(name, website)
+        if org:
+            if not company.website and org.get("blog"):
+                company.website = org["blog"] if "//" in org["blog"] else f"https://{org['blog']}"
+                company.email, company.email_source = find_email(company.website)
+            org_email = (org.get("email") or "").lower()
+            if not company.email and _usable(org_email, _domain(company.website)):
+                company.email, company.email_source = org_email, org.get("html_url", "")
     if with_news:
         company.news = [
             {"title": n.get("title"), "source": (n.get("source") or {}).get("name"), "date": n.get("date"), "link": n.get("link")}

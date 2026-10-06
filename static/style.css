@@ -31,6 +31,11 @@ button:disabled { opacity: 0.6; cursor: wait; }
 button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); padding: 6px 12px; font-size: 14px; }
 
 #status { margin: 24px 0 0; }
+#status .ghost { margin-left: 6px; }
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -6px 0 0; color: var(--muted); }
+.chip { background: var(--bg); color: var(--fg); border: 1px solid var(--line); padding: 4px 10px; font-size: 13px; font-weight: 400; border-radius: 999px; }
+.chip:hover { border-color: var(--accent); }
+footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); }
 #profile { margin-top: 32px; }
 .profile { padding: 16px 0; border-bottom: 1px solid var(--line); }
 .profile strong { font-size: 18px; }

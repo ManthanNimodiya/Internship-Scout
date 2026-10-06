@@ -69,10 +69,13 @@ $("#form").addEventListener("submit", async (e) => {
     const res = await fetch("/api/scout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const out = await res.json();
     if (!res.ok) throw new Error(out.detail || "Something went wrong");
+    lastResult = out;
     renderProfile(out.profile);
-    $("#results").innerHTML = out.results.map(renderResult).join("") || `<p class="muted">No listings matched. Try a broader search.</p>`;
+    $("#results").innerHTML = out.results.map(renderResult).join("") || `<p class="muted">Google Jobs had no listings for this search. Try broader words, or a city such as "Bengaluru, Karnataka, India".</p>`;
     const s = out.searches;
-    $("#status").textContent = `Checked ${out.results.length} companies from ${out.listings_seen} listings. Used ${s.this_run} SerpApi searches (${s.this_month} of ${s.budget} this month).`;
+    const boards = out.boards_skipped ? ` Skipped ${out.boards_skipped} reposts from job boards.` : "";
+    $("#status").innerHTML = `Checked ${out.results.length} companies from ${out.listings_seen} listings.${boards} Used ${s.this_run} SerpApi searches (${s.this_month} of ${s.budget} this month).` +
+      (out.results.length ? ` <button type="button" class="ghost" id="csv">Download as CSV</button>` : "");
   } catch (err) {
     $("#status").textContent = err.message;
   } finally {
@@ -81,7 +84,33 @@ $("#form").addEventListener("submit", async (e) => {
   }
 });
 
+let lastResult = null;
+
+// A spreadsheet the student can use as their outreach tracker.
+function downloadCsv() {
+  const rows = [["Score", "Company", "Role", "Location", "Founded", "Website", "Email", "Apply link", "Why", "Sent on", "Reply"]];
+  for (const r of lastResult.results) {
+    rows.push([r.score, r.company.name, r.job.title, r.job.location, r.company.founded ?? "", r.company.website,
+      r.company.email, r.job.apply[0]?.link ?? "", r.reasons.join("; "), "", ""]);
+  }
+  const csv = rows.map((row) => row.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(new Blob([csv], { type: "text/csv" })),
+    download: `internship-scout-${new Date().toISOString().slice(0, 10)}.csv`,
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.querySelectorAll("[data-query]").forEach((chip) =>
+  chip.addEventListener("click", () => {
+    $("#form").query.value = chip.dataset.query;
+    if (chip.dataset.location) $("#form").location.value = chip.dataset.location;
+  }),
+);
+
 document.addEventListener("click", async (e) => {
+  if (e.target.id === "csv") return downloadCsv();
   const i = e.target.dataset?.copy;
   if (i === undefined) return;
   await navigator.clipboard.writeText($(`#draft-${i}`).value);
